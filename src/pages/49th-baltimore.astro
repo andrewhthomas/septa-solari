@@ -1,0 +1,20 @@
+---
+import '../styles/global.css';
+import BaltimoreBoard from '../components/BaltimoreBoard';
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Live SEPTA T2 trolley arrivals at Baltimore Avenue and 49th Street on a split-flap board." />
+		<meta name="theme-color" content="#0d0d0c" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>T2 at 49th & Baltimore</title>
+	</head>
+	<body class="min-h-screen bg-station text-stone-200 antialiased">
+		<main>
+			<BaltimoreBoard client:only="react" />
+		</main>
+	</body>
+</html>

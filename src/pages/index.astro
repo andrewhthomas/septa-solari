@@ -1,0 +1,20 @@
+---
+import '../styles/global.css';
+import ArrivalsBoard from '../components/ArrivalsBoard';
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Live Amtrak and SEPTA Regional Rail arrivals at Philadelphia's 30th Street Station, on a split-flap board." />
+		<meta name="theme-color" content="#0d0d0c" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>30th Street Station Arrivals</title>
+	</head>
+	<body class="min-h-screen bg-station text-stone-200 antialiased">
+		<main>
+			<ArrivalsBoard client:only="react" />
+		</main>
+	</body>
+</html>
