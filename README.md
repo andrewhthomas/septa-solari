@@ -30,6 +30,35 @@ All times are shown in station time (Eastern), whatever the viewer's time zone.
 
 To add another stop page, add a stop list and fetcher next to `fetchT2At49th` in `src/lib/metro.ts`, an API route in `src/pages/api/`, and a page plus component modeled on `BaltimoreBoard.tsx`. Stop IDs come from `https://www3.septa.org/api/Stops/index.php?req1=<route>`.
 
+## Display mode
+
+Add `?display` to either page to run it on a screen left on all day: the boards scale to fill the screen exactly (no scrolling), the footer, notes and mouse cursor are hidden, and the header is compacted.
+
+| Option | Example | What it does |
+| --- | --- | --- |
+| `display` | `?display` | Turns display mode on. |
+| `boards` | `boards=west` | Which boards to show, in order. 30th St: `amtrak`, `rail`, `l`, `t`. 49th & Baltimore: `east`, `west`. |
+| `rows` | `rows=5` | Fixed rows per board. Without it, rows adapt to the screen: added to fill spare height, removed (down to 3) so the flaps stay as large as the width allows. |
+| `dim` | `dim=23-6` | Dims the screen between these hours, station time. For screens that can't be switched off on a schedule. |
+| `reload` | `reload=6` | Reloads every N hours (default 6, `0` to disable). It checks the site answers first, so a network drop never leaves an error page on screen. |
+
+It also asks the browser to keep the screen awake (tablets), and if updates stop for two minutes the boards dim and a "Data delayed" banner shows the last good update time.
+
+Examples:
+
+- `/49th-baltimore?display&boards=west`: just the westbound T2, ideal for a bar-shaped screen.
+- `/?display&boards=t,rail&dim=23-6`: trolleys and Regional Rail, dimmed overnight.
+
+### Raspberry Pi kiosk
+
+On Raspberry Pi OS (desktop, auto-login), add to `~/.config/labwc/autostart`:
+
+```
+chromium --kiosk --noerrdialogs --disable-infobars --ozone-platform=wayland "https://septa-solari.andrewhthomas.workers.dev/49th-baltimore?display&boards=west" &
+```
+
+(`chromium-browser` on older images.) To switch the screen off overnight instead of dimming, schedule `wlr-randr --output HDMI-A-1 --off` and `--on` with cron.
+
 ## Commands
 
 | Command | What it does |

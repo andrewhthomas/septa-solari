@@ -111,7 +111,12 @@ export function Board({
   else if (!loading && rows.length === 0) notice = 'No scheduled arrivals';
 
   return (
-    <section className="board-housing" style={{ ['--chars' as string]: chars }} aria-label={title}>
+    <section
+      className="board-housing"
+      data-board
+      style={{ ['--chars' as string]: chars }}
+      aria-label={title}
+    >
       <header className="mb-3 flex items-end justify-between gap-4">
         <div className="flex items-center gap-3">
           <span className="h-6 w-2 rounded-sm" style={{ background: accent }} aria-hidden="true" />

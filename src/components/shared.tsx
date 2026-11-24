@@ -1,6 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, type RefObject } from 'react';
 import { STATION_TZ } from '../lib/time';
 import { FlapText } from './SplitFlap';
+import {
+  isDimHour,
+  useNow,
+  useSafeReload,
+  useWakeLock,
+  type DisplayOptions,
+} from './display';
+
+/** After this long without a successful update, the board shows as delayed. */
+const STALE_MS = 2 * 60_000;
 
 const REFRESH_MS = 30_000;
 
@@ -34,6 +44,7 @@ export function useCompact(): boolean {
 export function usePolledJson<T>(url: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastSuccess, setLastSuccess] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +58,7 @@ export function usePolledJson<T>(url: string) {
         if (!cancelled) {
           setData(json);
           setError(null);
+          setLastSuccess(Date.now());
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
@@ -70,10 +82,10 @@ export function usePolledJson<T>(url: string) {
     };
   }, [url]);
 
-  return { data, error, loading: data === null && error === null };
+  return { data, error, lastSuccess, loading: data === null && error === null };
 }
 
-function FlapClock() {
+function FlapClock({ size }: { size?: string }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -82,7 +94,11 @@ function FlapClock() {
   const label = clockFormat.format(now);
   const [time, meridiem] = label.split(' ');
   return (
-    <div className="board-housing clock" aria-label={`Local time ${label}`}>
+    <div
+      className="board-housing clock"
+      style={size ? { ['--cell' as string]: size } : undefined}
+      aria-label={`Local time ${label}`}
+    >
       <FlapText text={time} width={5} align="right" />
       <span className="ml-2 text-sm font-bold tracking-widest text-stone-400">{meridiem}</span>
     </div>
@@ -97,9 +113,59 @@ interface PageShellProps {
   credits: ReactNode;
   generatedAt?: string;
   error?: string | null;
+  lastSuccess?: number | null;
+  display: DisplayOptions;
+  /** The display-mode container; the page fits it to the screen with useFitToScreen. */
+  containerRef: RefObject<HTMLDivElement | null>;
 }
 
-export function PageShell({ kicker, title, nav, children, credits, generatedAt, error }: PageShellProps) {
+export function PageShell({
+  kicker,
+  title,
+  nav,
+  children,
+  credits,
+  generatedAt,
+  error,
+  lastSuccess,
+  display,
+  containerRef,
+}: PageShellProps) {
+  const now = useNow(15_000);
+  const stale = lastSuccess !== null && lastSuccess !== undefined && now - lastSuccess > STALE_MS;
+  const dim = display.enabled && isDimHour(display.dim, now);
+
+  useWakeLock(display.enabled);
+  useSafeReload(display.enabled ? display.reloadHours : 0);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('display-mode', display.enabled);
+    document.documentElement.classList.toggle('display-dim', dim);
+  }, [display.enabled, dim]);
+
+  if (display.enabled) {
+    return (
+      <div ref={containerRef} className="flex flex-col gap-3 px-3 py-3">
+        <header className="flex items-center justify-between gap-4">
+          <div className="flex items-baseline gap-4">
+            <h1 className="font-board text-2xl font-bold tracking-[0.25em] text-flap-ink uppercase">{title}</h1>
+            <p className="text-xs tracking-[0.3em] text-stone-400 uppercase">{kicker}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            {stale && (
+              <p className="rounded bg-flap-amber px-2 py-1 text-xs font-bold tracking-widest text-black uppercase">
+                Data delayed · last update{' '}
+                {lastSuccess ? clockFormat.format(lastSuccess) : 'unknown'}
+              </p>
+            )}
+            <FlapClock size="1.4rem" />
+          </div>
+        </header>
+        <div className={`flex flex-col gap-3 transition-opacity ${stale ? 'opacity-50' : ''}`}>{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex max-w-[1500px] flex-col gap-8 px-4 py-8 sm:px-8">
       <header className="flex flex-wrap items-end justify-between gap-6">
@@ -124,6 +190,7 @@ export function PageShell({ kicker, title, nav, children, credits, generatedAt, 
         <p aria-live="polite">
           {generatedAt ? `Updated ${updatedFormat.format(new Date(generatedAt))}` : 'Loading…'}
           {error ? ` · retrying (${error})` : ''}
+          {stale ? ' · data delayed' : ''}
         </p>
       </footer>
     </div>
