@@ -23,7 +23,8 @@ const COLUMNS: Column[] = [
   },
   { key: 'destination', label: 'Destination', width: 14, notice: true, get: (r) => r.destination ?? '' },
   { key: 'next', label: 'Next Stop', width: 12, wideOnly: true, get: (r) => r.nextStop ?? '' },
-  { key: 'status', label: 'Status', width: 12, get: positionStatus },
+  // 13 wide so two-digit counts fit: "14 STOPS AWAY".
+  { key: 'status', label: 'Status', width: 13, get: positionStatus },
 ];
 
 export default function BaltimoreBoard() {
